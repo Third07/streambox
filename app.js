@@ -671,7 +671,7 @@ function videoEmbed(data) {
     <div class="player-container">
       <iframe
         id="videoPlayer"
-        src="${escapeHtml(embedUrl(data))}"
+        data-src="${escapeHtml(embedUrl(data))}"
         title="${title} video player"
         allow="autoplay *; encrypted-media *; picture-in-picture *; fullscreen *"
         allowfullscreen="true"
@@ -1371,10 +1371,14 @@ function attachPlayerLoadHandlers(data) {
   if (!iframe || !loading) return;
 
   window.clearTimeout(state.playerLoadTimer);
-  const markReady = () => {
+  const hideLoading = () => {
     loading.classList.add('hidden');
     loading.setAttribute('aria-hidden', 'true');
     window.clearTimeout(state.playerLoadTimer);
+  };
+  const markReady = () => {
+    if (!iframe.isConnected || !loading.isConnected) return;
+    hideLoading();
     const type = mediaTypeOf(data);
     saveSourcePreference(type, currentSource(type).id);
     pushHistory(data);
@@ -1389,7 +1393,14 @@ function attachPlayerLoadHandlers(data) {
   iframe.addEventListener('load', markReady, { once: true });
   iframe.addEventListener('error', markFailed, { once: true });
   if (nextButton) nextButton.addEventListener('click', () => tryNextSource(data));
-  state.playerLoadTimer = window.setTimeout(markFailed, 9000);
+  state.playerLoadTimer = window.setTimeout(() => {
+    if (!iframe.isConnected || !loading.isConnected || loading.classList.contains('hidden')) return;
+    hideLoading();
+    toast(`${currentSource(mediaTypeOf(data)).name} is still loading. Try the next source if playback does not start.`);
+  }, 9000);
+
+  const sourceUrl = iframe.dataset.src;
+  if (sourceUrl) iframe.src = sourceUrl;
 }
 
 function renderPlayerFrame(data) {
