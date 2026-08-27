@@ -14,19 +14,16 @@ const PLAYER_SOURCES = {
   movie: [
     { id: 'videasy', name: 'Videasy', base: 'https://player.videasy.net/movie/' },
     { id: 'vidlink', name: 'VidLink', base: 'https://vidlink.pro/movie/' },
-    { id: '111movies', name: '111Movies', base: 'https://111movies.com/movie/' },
+    { id: '111movies', name: '111Movies', base: 'https://111movies.net/movie/' },
     { id: 'vidsrc-io', name: 'VidSrc IO', base: 'https://vidsrc.io/embed/movie/' },
-    { id: 'vidsrc-cc', name: 'VidSrc CC', base: 'https://vidsrc.cc/v2/embed/movie/' },
-    { id: 'vidrock', name: 'VidRock', base: 'https://vidrock.net/movie/' },
-    { id: 'moviesapi', name: 'MoviesAPI', base: 'https://moviesapi.club/movie/' }
+    { id: 'vidrock', name: 'VidRock', base: 'https://vidrock.net/movie/' }
   ],
   tv: [
     { id: 'videasy', name: 'Videasy', base: 'https://player.videasy.net/tv/' },
     { id: 'vidlink', name: 'VidLink', base: 'https://vidlink.pro/tv/' },
-    { id: '111movies', name: '111Movies', base: 'https://111movies.com/tv/' },
+    { id: '111movies', name: '111Movies', base: 'https://111movies.net/tv/' },
     { id: 'vidrock', name: 'VidRock', base: 'https://vidrock.net/tv/' },
-    { id: 'vidsrc-io', name: 'VidSrc IO', base: 'https://vidsrc.io/embed/tv/' },
-    { id: 'vidsrc-cc', name: 'VidSrc CC', base: 'https://vidsrc.cc/v2/embed/tv/' }
+    { id: 'vidsrc-io', name: 'VidSrc IO', base: 'https://vidsrc.io/embed/tv/' }
   ]
 };
 
