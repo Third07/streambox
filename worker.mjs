@@ -62,6 +62,28 @@ function validateQuery(url) {
   return '';
 }
 
+function normalizeSecret(value) {
+  let secret = String(value || '').trim();
+  if ((secret.startsWith('"') && secret.endsWith('"')) || (secret.startsWith("'") && secret.endsWith("'"))) {
+    secret = secret.slice(1, -1).trim();
+  }
+  return secret;
+}
+
+function getTmdbCredentials(env) {
+  const configuredToken = normalizeSecret(env.TMDB_TOKEN).replace(/^Bearer\s+/i, '').trim();
+  const configuredApiKey = normalizeSecret(env.TMDB_API_KEY);
+
+  // TMDB v3 keys are 32 hexadecimal characters. Accept one placed in
+  // TMDB_TOKEN so an existing dashboard secret does not need to be renamed.
+  if (/^[a-f0-9]{32}$/i.test(configuredToken)) {
+    return { apiKey: configuredToken, token: '', mode: 'api_key' };
+  }
+  if (configuredToken) return { apiKey: '', token: configuredToken, mode: 'bearer' };
+  if (configuredApiKey) return { apiKey: configuredApiKey, token: '', mode: 'api_key' };
+  return { apiKey: '', token: '', mode: 'none' };
+}
+
 async function handleTmdb(request, env, ctx) {
   if (request.method !== 'GET' && request.method !== 'HEAD') {
     return jsonResponse({ error: 'Method not allowed.' }, 405, { allow: 'GET, HEAD' });
@@ -76,14 +98,15 @@ async function handleTmdb(request, env, ctx) {
   const validationError = validateQuery(incomingUrl);
   if (validationError) return jsonResponse({ error: validationError }, 400);
 
-  if (!env.TMDB_TOKEN && !env.TMDB_API_KEY) {
+  const credentials = getTmdbCredentials(env);
+  if (credentials.mode === 'none') {
     return jsonResponse({ error: 'TMDB is not configured on this deployment.' }, 503);
   }
 
   const upstreamUrl = new URL(`/3${upstreamPath}`, TMDB_ORIGIN);
   for (const [key, value] of incomingUrl.searchParams) upstreamUrl.searchParams.append(key, value);
   if (!upstreamUrl.searchParams.has('language')) upstreamUrl.searchParams.set('language', 'en-US');
-  if (env.TMDB_API_KEY && !env.TMDB_TOKEN) upstreamUrl.searchParams.set('api_key', env.TMDB_API_KEY);
+  if (credentials.apiKey) upstreamUrl.searchParams.set('api_key', credentials.apiKey);
 
   const cacheKeyUrl = new URL(request.url);
   cacheKeyUrl.hash = '';
@@ -98,7 +121,7 @@ async function handleTmdb(request, env, ctx) {
   }
 
   const headers = new Headers({ Accept: 'application/json' });
-  if (env.TMDB_TOKEN) headers.set('authorization', `Bearer ${env.TMDB_TOKEN}`);
+  if (credentials.token) headers.set('authorization', `Bearer ${credentials.token}`);
 
   const startedAt = Date.now();
   const upstream = await fetch(upstreamUrl, { headers });
@@ -135,9 +158,11 @@ export default {
         return await handleTmdb(request, env, ctx);
       }
       if (url.pathname === '/api/health') {
+        const credentials = getTmdbCredentials(env);
         return jsonResponse({
           ok: true,
-          tmdb_configured: Boolean(env.TMDB_TOKEN || env.TMDB_API_KEY)
+          tmdb_configured: credentials.mode !== 'none',
+          tmdb_auth_mode: credentials.mode
         });
       }
       if (url.pathname.startsWith('/api/')) return jsonResponse({ error: 'API endpoint not found.' }, 404);

@@ -33,6 +33,8 @@ The Worker serves the static site and handles allowlisted requests under `/api/t
    npx wrangler secret put TMDB_API_KEY
    ```
 
+   For compatibility, a 32-character v3 API key stored under `TMDB_TOKEN` is detected automatically. Values copied with surrounding quotes or a `Bearer ` prefix are normalized before use.
+
 3. Confirm Wrangler is signed in to the Cloudflare account that owns the `rtnw.online` zone:
 
    ```bash
