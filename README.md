@@ -13,6 +13,7 @@ Streambox is a responsive, build-free movie and TV catalog powered by TMDB. The 
 - Named playback sources, a Try Next Source action, slow-source feedback, and remembered source preference.
 - Aired episode metadata with names, thumbnails, dates, and future-episode filtering.
 - Responsive TMDB image `srcset` values and browser/edge API caching.
+- Cloudflare static-asset security headers and API no-index headers.
 - One production origin: `https://streambox.rtnw.online/`.
 
 ## Cloudflare deployment
@@ -63,6 +64,7 @@ Streambox/
 ├── styles.css          # Complete responsive design system
 ├── worker.mjs          # Allowlisted TMDB proxy and edge cache
 ├── wrangler.jsonc      # Worker and static-assets configuration
+├── _headers            # Security headers for Cloudflare static assets
 ├── .assetsignore       # Files excluded from public static assets
 ├── .dev.vars.example   # Local secret-name example only
 ├── favicon.ico

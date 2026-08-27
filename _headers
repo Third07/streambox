@@ -1,0 +1,13 @@
+/*
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; connect-src 'self'; font-src 'self'; form-action 'self'; frame-ancestors 'none'; frame-src https://player.videasy.net https://vidlink.pro https://111movies.com https://vidsrc.io https://vidsrc.cc https://vidrock.net https://moviesapi.club; img-src 'self' https://image.tmdb.org data:; manifest-src 'self'; media-src 'self' blob:; object-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self'; upgrade-insecure-requests
+  Cross-Origin-Opener-Policy: same-origin
+  Permissions-Policy: camera=(), geolocation=(), microphone=(), payment=(), usb=()
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+
+https://streambox.thethird0716.workers.dev/*
+  X-Robots-Tag: noindex
+
+https://:version.streambox.thethird0716.workers.dev/*
+  X-Robots-Tag: noindex
