@@ -1519,6 +1519,26 @@ main {
   text-transform: uppercase;
 }
 
+.provider-credit {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.67rem;
+  line-height: 1.55;
+}
+
+.provider-credit a {
+  color: var(--text-soft);
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.35);
+  text-underline-offset: 3px;
+}
+
+.provider-credit a:hover,
+.provider-credit a:focus-visible {
+  color: #fff;
+  text-decoration-color: var(--brand-bright);
+}
+
 .seasons-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
@@ -1890,6 +1910,7 @@ main {
 
 .site-footer small {
   max-width: 580px;
+  line-height: 1.55;
   text-align: right;
 }
 

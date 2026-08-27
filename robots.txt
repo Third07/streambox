@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://streambox.robpertua.workers.dev/sitemap.xml
+Sitemap: https://streambox.rtnw.online/sitemap.xml

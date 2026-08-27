@@ -1,6 +1,31 @@
 const TMDB_ORIGIN = 'https://api.themoviedb.org';
 const API_PREFIX = '/api/tmdb';
 const CACHE_CONTROL = 'public, max-age=300, s-maxage=21600, stale-while-revalidate=86400';
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "connect-src 'self'",
+  "font-src 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "frame-src https://player.videasy.net https://vidlink.pro https://111movies.com https://vidsrc.io https://vidsrc.cc https://vidrock.net https://moviesapi.club",
+  "img-src 'self' https://image.tmdb.org data:",
+  "manifest-src 'self'",
+  "media-src 'self' blob:",
+  "object-src 'none'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self'",
+  'upgrade-insecure-requests'
+].join('; ');
+
+const STATIC_SECURITY_HEADERS = {
+  'content-security-policy': CONTENT_SECURITY_POLICY,
+  'cross-origin-opener-policy': 'same-origin',
+  'permissions-policy': 'camera=(), geolocation=(), microphone=(), payment=(), usb=()',
+  'referrer-policy': 'strict-origin-when-cross-origin',
+  'x-content-type-options': 'nosniff',
+  'x-frame-options': 'DENY'
+};
 
 const ALLOWED_PATHS = [
   /^\/trending\/all\/(day|week)$/,
@@ -31,6 +56,7 @@ function jsonResponse(payload, status = 200, extraHeaders = {}) {
     status,
     headers: {
       'cache-control': 'no-store',
+      'x-robots-tag': 'noindex, nofollow',
       'x-content-type-options': 'nosniff',
       ...extraHeaders
     }
@@ -104,6 +130,7 @@ async function handleTmdb(request, env, ctx) {
   const responseHeaders = new Headers();
   responseHeaders.set('content-type', upstream.headers.get('content-type') || 'application/json; charset=utf-8');
   responseHeaders.set('x-content-type-options', 'nosniff');
+  responseHeaders.set('x-robots-tag', 'noindex, nofollow');
   responseHeaders.set('vary', 'accept-encoding');
   responseHeaders.set('cache-control', upstream.ok ? CACHE_CONTROL : 'no-store');
 
@@ -125,6 +152,23 @@ async function handleTmdb(request, env, ctx) {
   return response;
 }
 
+async function handleAsset(request, env) {
+  const asset = await env.ASSETS.fetch(request);
+  const headers = new Headers(asset.headers);
+  for (const [name, value] of Object.entries(STATIC_SECURITY_HEADERS)) headers.set(name, value);
+
+  const contentType = headers.get('content-type') || '';
+  if (contentType.includes('text/html')) {
+    headers.set('cache-control', 'public, max-age=0, must-revalidate');
+  }
+
+  return new Response(request.method === 'HEAD' ? null : asset.body, {
+    status: asset.status,
+    statusText: asset.statusText,
+    headers
+  });
+}
+
 export default {
   async fetch(request, env, ctx) {
     try {
@@ -132,8 +176,14 @@ export default {
       if (url.pathname === API_PREFIX || url.pathname.startsWith(`${API_PREFIX}/`)) {
         return await handleTmdb(request, env, ctx);
       }
+      if (url.pathname === '/api/health') {
+        return jsonResponse({
+          ok: true,
+          tmdb_configured: Boolean(env.TMDB_TOKEN || env.TMDB_API_KEY)
+        });
+      }
       if (url.pathname.startsWith('/api/')) return jsonResponse({ error: 'API endpoint not found.' }, 404);
-      return await env.ASSETS.fetch(request);
+      return await handleAsset(request, env);
     } catch (error) {
       console.error(JSON.stringify({
         message: 'request failed',

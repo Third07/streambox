@@ -13,7 +13,7 @@ Streambox is a responsive, build-free movie and TV catalog powered by TMDB. The 
 - Named playback sources, a Try Next Source action, slow-source feedback, and remembered source preference.
 - Aired episode metadata with names, thumbnails, dates, and future-episode filtering.
 - Responsive TMDB image `srcset` values and browser/edge API caching.
-- One production origin: `https://streambox.robpertua.workers.dev/`.
+- One production origin: `https://streambox.rtnw.online/`.
 
 ## Cloudflare deployment
 
@@ -32,11 +32,19 @@ The Worker serves the static site and handles allowlisted requests under `/api/t
    npx wrangler secret put TMDB_API_KEY
    ```
 
-3. Deploy the Worker and static assets:
+3. Confirm Wrangler is signed in to the Cloudflare account that owns the `rtnw.online` zone:
+
+   ```bash
+   npx wrangler whoami
+   ```
+
+4. Deploy the Worker and static assets:
 
    ```bash
    npx wrangler deploy
    ```
+
+The `routes` entry in `wrangler.jsonc` attaches `streambox.rtnw.online` as a Worker Custom Domain. Because `rtnw.online` already uses Cloudflare nameservers, Cloudflare creates the subdomain DNS record and TLS certificate during setup. No Hostinger DNS record is needed. If the zone and Worker are in different Cloudflare accounts, move the Worker or zone into the same account before deploying.
 
 For local Worker development, copy `.dev.vars.example` to `.dev.vars`, add a replacement credential, and run:
 
@@ -69,4 +77,4 @@ Streambox/
 
 Streambox keeps the currently configured external playback sources and displays their real names. Cross-origin iframe restrictions prevent the app from proving that a video itself started, so a slow-source message and manual Try Next Source control are provided. A source preference is saved only after its iframe finishes loading.
 
-Streambox does not host media files. Playback and download links are provided by independent third parties and may change or be unavailable by title or region.
+Streambox does not host media files. The obsolete third-party downloader was removed. When TMDB supplies a Philippines watch-provider destination, the watch page links to that regional availability page instead.

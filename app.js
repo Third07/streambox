@@ -40,7 +40,7 @@ const ICONS = {
   play: '<path d="m9 7 8 5-8 5Z"></path>',
   bookmark: '<path d="M6 4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18l-6-4-6 4Z"></path>',
   bookmarkFilled: '<path d="M6 4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18l-6-4-6 4Z" fill="currentColor"></path>',
-  download: '<path d="M12 3v12m0 0 5-5m-5 5-5-5M5 21h14"></path>',
+  external: '<path d="M14 4h6v6M20 4l-9 9"></path><path d="M18 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h6"></path>',
   left: '<path d="m15 18-6-6 6-6"></path>',
   right: '<path d="m9 18 6-6-6-6"></path>',
   search: '<circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path>',
@@ -320,11 +320,26 @@ const API = {
           headers: { Accept: 'application/json' },
           signal: controller.signal
         });
-        if (!response.ok) throw new Error(`TMDB returned ${response.status}.`);
-        return await response.json();
+        let payload;
+        try {
+          payload = await response.json();
+        } catch {
+          payload = null;
+        }
+
+        if (!response.ok) {
+          const error = new Error(payload?.error || `The catalog service returned ${response.status}.`);
+          error.status = response.status;
+          throw error;
+        }
+        if (!payload) throw new Error('The catalog service returned an invalid response.');
+        return payload;
       } catch (error) {
         lastError = error;
-        if (attempt === 0) await sleep(450);
+        const status = Number(error?.status) || 0;
+        const retryable = (!status || status >= 500) && !/not configured/i.test(error?.message || '');
+        if (attempt === 0 && retryable) await sleep(450);
+        else break;
       } finally {
         window.clearTimeout(timeout);
       }
@@ -684,16 +699,27 @@ function playerShell(data) {
     </div>`;
 }
 
-function downloadHref(data) {
-  const id = validId(data.id);
-  return mediaTypeOf(data) === 'movie'
-    ? `https://dl.vidsrc.vip/movie/${id}`
-    : `https://dl.vidsrc.vip/tv/${id}/${state.currentSeason}/${state.currentEpisode}`;
+function regionalProviderData(data) {
+  const result = data?.['watch/providers']?.results?.[CONFIG.REGION];
+  return result && typeof result === 'object' ? result : {};
+}
+
+function whereToWatchHref(data) {
+  const value = regionalProviderData(data).link;
+  if (typeof value !== 'string') return '';
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' ? url.toString() : '';
+  } catch {
+    return '';
+  }
 }
 
 function detailsBlock(data) {
   const type = mediaTypeOf(data);
-  const providers = data?.['watch/providers']?.results?.[CONFIG.REGION]?.flatrate || [];
+  const providerData = regionalProviderData(data);
+  const providers = Array.isArray(providerData.flatrate) ? providerData.flatrate : [];
+  const providerLink = whereToWatchHref(data);
   const genres = Array.isArray(data.genres) ? data.genres : [];
   const year = yearOf(data);
   const runtime = type === 'movie'
@@ -725,6 +751,7 @@ function detailsBlock(data) {
               return `<span class="chip">${logo ? `<img src="${logo}" alt="">` : ''}${escapeHtml(provider.provider_name)}</span>`;
             }).join('')}
           </div>
+          <p class="provider-credit">Philippines availability data from JustWatch via TMDB.${providerLink ? ` <a href="${escapeHtml(providerLink)}" target="_blank" rel="noopener noreferrer nofollow">View provider details</a>.` : ''}</p>
         </div>`
       : ''}`;
 }
@@ -792,7 +819,7 @@ function errorView(error) {
       <div class="state-inner">
         <div class="state-icon" aria-hidden="true">!</div>
         <h1 class="state-title">This screen did not load</h1>
-        <p class="state-copy">${escapeHtml(message)} Check your connection, then try again.</p>
+        <p class="state-copy">${escapeHtml(message)}</p>
         <button class="btn btn-accent" type="button" data-retry>${icon('retry')} Try again</button>
       </div>
     </section>`;
@@ -1234,6 +1261,7 @@ async function renderWatch(params, token) {
     }
     pushHistory(data);
     setDocumentTitle(titleOf(data));
+    const whereToWatch = whereToWatchHref(data);
 
     const controls = `
       <div class="control-grid">
@@ -1248,9 +1276,11 @@ async function renderWatch(params, token) {
         <button class="btn" id="nextSourceBtn" type="button">
           ${icon('retry')} Try next source
         </button>
-        <a class="btn" id="downloadBtn" href="${downloadHref(data)}" target="_blank" rel="noopener noreferrer">
-          ${icon('download')} Download
-        </a>
+        ${whereToWatch
+          ? `<a class="btn" id="whereToWatchBtn" href="${escapeHtml(whereToWatch)}" target="_blank" rel="noopener noreferrer nofollow">
+              ${icon('external')} Where to watch
+            </a>`
+          : ''}
       </div>
       <p class="source-help">Using <strong>${escapeHtml(currentSource(type).name)}</strong>. If playback is blocked or unavailable, try the next source.</p>`;
 
@@ -1316,11 +1346,6 @@ function refreshEpisodeControls(episodes) {
     button.classList.toggle('active', active);
     button.setAttribute('aria-pressed', String(active));
   });
-}
-
-function updateDownloadLink(data) {
-  const downloadButton = el('#downloadBtn');
-  if (downloadButton) downloadButton.href = downloadHref(data);
 }
 
 function syncWatchUrl(data) {
@@ -1441,7 +1466,6 @@ function bindPlayerControls(data, seasons, episodes) {
     if (!selected) return;
     state.currentEpisode = toInteger(selected.episode_number, 1);
     refreshEpisodeControls(episodes);
-    updateDownloadLink(data);
     renderPlayerFrame(data);
     syncWatchUrl(data);
     pushHistory(data);
