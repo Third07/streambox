@@ -1,0 +1,8 @@
+.assetsignore
+.dev.vars*
+.gitignore
+README.md
+worker.mjs
+wrangler.jsonc
+*.zip
+.wrangler/

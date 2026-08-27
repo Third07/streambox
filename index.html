@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#050507">
+  <meta name="color-scheme" content="dark">
+
+  <title>Streambox — Discover Movies &amp; TV Series</title>
+  <meta name="description" content="Explore and filter trending movies and TV series on Streambox, save a watchlist, and continue from your latest season and episode.">
+  <meta name="author" content="Streambox">
+  <meta name="application-name" content="Streambox">
+  <meta name="apple-mobile-web-app-title" content="Streambox">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <link rel="canonical" href="https://streambox.robpertua.workers.dev/">
+  <link rel="sitemap" type="application/xml" href="https://streambox.robpertua.workers.dev/sitemap.xml">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://streambox.robpertua.workers.dev/">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:site_name" content="Streambox">
+  <meta property="og:title" content="Streambox — Discover Movies &amp; TV Series">
+  <meta property="og:description" content="Explore trending movies and TV series, search the TMDB catalog, and build your personal watchlist.">
+  <meta property="og:image" content="https://streambox.robpertua.workers.dev/og-image.jpeg">
+  <meta property="og:image:alt" content="Streambox movie and TV catalog">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Streambox — Discover Movies &amp; TV Series">
+  <meta name="twitter:description" content="Explore trending movies and TV series, search the TMDB catalog, and build your personal watchlist.">
+  <meta name="twitter:image" content="https://streambox.robpertua.workers.dev/og-image.jpeg">
+  <meta name="twitter:image:alt" content="Streambox movie and TV catalog">
+
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://image.tmdb.org" crossorigin>
+  <link rel="dns-prefetch" href="https://image.tmdb.org">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://streambox.robpertua.workers.dev/#website",
+        "url": "https://streambox.robpertua.workers.dev/",
+        "name": "Streambox",
+        "description": "Discover movies and TV series, search the TMDB catalog, and save a personal watchlist.",
+        "inLanguage": "en"
+      },
+      {
+        "@type": "WebApplication",
+        "@id": "https://streambox.robpertua.workers.dev/#app",
+        "name": "Streambox",
+        "description": "A responsive movie and TV discovery catalog powered by TMDB.",
+        "url": "https://streambox.robpertua.workers.dev/",
+        "image": "https://streambox.robpertua.workers.dev/og-image.jpeg",
+        "applicationCategory": "EntertainmentApplication",
+        "operatingSystem": "Any",
+        "isAccessibleForFree": true,
+        "isPartOf": {
+          "@id": "https://streambox.robpertua.workers.dev/#website"
+        },
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "author": {
+          "@type": "Organization",
+          "name": "Streambox"
+        }
+      }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#app">Skip to content</a>
+
+  <header class="site-header" id="siteHeader">
+    <nav class="nav" aria-label="Primary navigation">
+      <a class="brand" href="#/home" aria-label="Streambox home">
+        <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true">
+          <rect width="64" height="64" rx="16"></rect>
+          <path d="M48 18c-4-3-9-5-14-5-9 0-15 5-15 12 0 8 7 10 14 12 5 1 8 2 8 5 0 2-2 4-6 4-5 0-10-2-15-6l-5 8c5 5 12 8 20 8 10 0 17-5 17-14 0-8-6-11-15-13-5-1-8-2-8-5 0-2 2-4 6-4 4 0 8 1 12 5z"></path>
+          <circle cx="14" cy="18" r="3"></circle>
+          <circle cx="14" cy="32" r="3"></circle>
+          <circle cx="14" cy="46" r="3"></circle>
+        </svg>
+        <span class="brand-name">Streambox</span>
+      </a>
+
+      <div class="tabs desktop-tabs" aria-label="Browse">
+        <a href="#/home" data-tab>Home</a>
+        <a href="#/movies" data-tab>Movies</a>
+        <a href="#/tv" data-tab>TV series</a>
+        <a href="#/watchlist" data-tab>Watchlist</a>
+      </div>
+
+      <div class="search-wrap">
+        <div class="search" role="search">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="m20 20-4-4"></path>
+          </svg>
+          <label class="visually-hidden" for="q">Search movies and TV series</label>
+          <input id="q" type="search" role="combobox" placeholder="Search titles…" autocomplete="off" aria-autocomplete="list" aria-haspopup="listbox" aria-controls="suggest" aria-expanded="false">
+          <button class="search-clear" id="searchClear" type="button" aria-label="Clear search" hidden>×</button>
+          <kbd class="kbd" aria-hidden="true">/</kbd>
+        </div>
+        <div id="suggest" class="suggest" role="listbox" aria-label="Search suggestions"></div>
+      </div>
+
+      <div class="nav-actions">
+        <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Open menu" aria-controls="mobileMenu" aria-expanded="false">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </nav>
+
+    <div class="mobile-menu" id="mobileMenu" aria-hidden="true">
+      <nav class="mobile-menu-content" aria-label="Mobile navigation">
+        <a href="#/home" data-tab class="mobile-menu-item">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z"></path></svg>
+          Home
+        </a>
+        <a href="#/movies" data-tab class="mobile-menu-item">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="m3 9 18-5M8 5l3 4M15 4l3 4"></path></svg>
+          Movies
+        </a>
+        <a href="#/tv" data-tab class="mobile-menu-item">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m8 2 4 3 4-3"></path></svg>
+          TV series
+        </a>
+        <a href="#/watchlist" data-tab class="mobile-menu-item">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18l-6-4-6 4Z"></path></svg>
+          Watchlist
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="app" tabindex="-1" aria-live="polite" aria-busy="true">
+    <section class="seo-fallback">
+      <h1>Discover movies and TV series with Streambox</h1>
+      <p>Explore trending titles from the TMDB catalog, search for movies and shows, save a personal watchlist, and continue watching across visits.</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div>
+      <strong>Streambox</strong>
+      <span>Movie and TV discovery, powered by TMDB.</span>
+    </div>
+    <small>Streambox does not host media files. Playback is provided by independent third parties.</small>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+</body>
+</html>

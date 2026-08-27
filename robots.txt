@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://streambox.robpertua.workers.dev/sitemap.xml

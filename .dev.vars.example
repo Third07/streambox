@@ -1,0 +1,4 @@
+# Copy this file to .dev.vars for local Worker development.
+# Use one authentication method. A TMDB API Read Access Token is preferred.
+TMDB_TOKEN=replace_with_your_tmdb_read_access_token
+# TMDB_API_KEY=replace_with_your_tmdb_v3_api_key
