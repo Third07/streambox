@@ -23,7 +23,8 @@ const ALLOWED_QUERY_PARAMS = new Set([
   'vote_average.gte',
   'vote_count.gte',
   'watch_region',
-  'with_genres'
+  'with_genres',
+  'with_original_language'
 ]);
 
 function jsonResponse(payload, status = 200, extraHeaders = {}) {
@@ -52,6 +53,11 @@ function validateQuery(url) {
   const query = url.searchParams.get('query');
   if (query !== null && (!query.trim() || query.length > 100)) {
     return 'Search queries must contain between 1 and 100 characters.';
+  }
+
+  const originalLanguage = url.searchParams.get('with_original_language');
+  if (originalLanguage && !/^[a-z]{2}$/i.test(originalLanguage)) {
+    return 'Original language must be a two-letter code.';
   }
 
   const append = url.searchParams.get('append_to_response');

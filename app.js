@@ -12,18 +12,20 @@ const CONFIG = {
 
 const PLAYER_SOURCES = {
   movie: [
-    { id: 'videasy', name: 'Videasy', base: 'https://player.videasy.net/movie/' },
-    { id: 'vidlink', name: 'VidLink', base: 'https://vidlink.pro/movie/' },
-    { id: '111movies', name: '111Movies', base: 'https://111movies.net/movie/' },
-    { id: 'vidsrc-io', name: 'VidSrc IO', base: 'https://vidsrc.io/embed/movie/' },
-    { id: 'vidrock', name: 'VidRock', base: 'https://vidrock.net/movie/' }
+    { id: 'vidlink', name: 'VidLink', badge: 'Recommended', provider: 'vidlink', origin: 'https://vidlink.pro', base: 'https://vidlink.pro/movie/', events: true },
+    { id: 'vidlove', name: 'VidLove', badge: 'New', provider: 'vidlove', origin: 'https://player.vidlove.cc', base: 'https://player.vidlove.cc/embed/movie/', events: true, externalSeek: true },
+    { id: 'videasy', name: 'Videasy', origin: 'https://player.videasy.net', base: 'https://player.videasy.net/movie/' },
+    { id: 'vidrock', name: 'VidRock', origin: 'https://vidrock.net', base: 'https://vidrock.net/movie/' },
+    { id: 'vidsrc-io', name: 'VidSrc IO', origin: 'https://vidsrc.io', base: 'https://vidsrc.io/embed/movie/' },
+    { id: '111movies', name: '111Movies', origin: 'https://111movies.net', base: 'https://111movies.net/movie/' }
   ],
   tv: [
-    { id: 'videasy', name: 'Videasy', base: 'https://player.videasy.net/tv/' },
-    { id: 'vidlink', name: 'VidLink', base: 'https://vidlink.pro/tv/' },
-    { id: '111movies', name: '111Movies', base: 'https://111movies.net/tv/' },
-    { id: 'vidrock', name: 'VidRock', base: 'https://vidrock.net/tv/' },
-    { id: 'vidsrc-io', name: 'VidSrc IO', base: 'https://vidsrc.io/embed/tv/' }
+    { id: 'vidlink', name: 'VidLink', badge: 'Recommended', provider: 'vidlink', origin: 'https://vidlink.pro', base: 'https://vidlink.pro/tv/', events: true },
+    { id: 'vidlove', name: 'VidLove', badge: 'New', provider: 'vidlove', origin: 'https://player.vidlove.cc', base: 'https://player.vidlove.cc/embed/tv/', events: true, externalSeek: true },
+    { id: 'videasy', name: 'Videasy', origin: 'https://player.videasy.net', base: 'https://player.videasy.net/tv/' },
+    { id: 'vidrock', name: 'VidRock', origin: 'https://vidrock.net', base: 'https://vidrock.net/tv/' },
+    { id: 'vidsrc-io', name: 'VidSrc IO', origin: 'https://vidsrc.io', base: 'https://vidsrc.io/embed/tv/' },
+    { id: '111movies', name: '111Movies', origin: 'https://111movies.net', base: 'https://111movies.net/tv/' }
   ]
 };
 
@@ -43,7 +45,8 @@ const ICONS = {
   search: '<circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path>',
   close: '<path d="m6 6 12 12M18 6 6 18"></path>',
   trash: '<path d="M4 7h16M9 7V4h6v3m3 0-1 14H7L6 7m4 4v6m4-6v6"></path>',
-  retry: '<path d="M20 7v5h-5M4 17v-5h5"></path><path d="M6.1 9a7 7 0 0 1 11.7-2L20 9M4 15l2.2 2a7 7 0 0 0 11.7-2"></path>'
+  retry: '<path d="M20 7v5h-5M4 17v-5h5"></path><path d="M6.1 9a7 7 0 0 1 11.7-2L20 9M4 15l2.2 2a7 7 0 0 0 11.7-2"></path>',
+  skip: '<path d="m5 6 8 6-8 6Z"></path><path d="m13 6 8 6-8 6Z"></path>'
 };
 
 const state = {
@@ -58,7 +61,11 @@ const state = {
   currentEpisode: 1,
   menuOpen: false,
   toastTimer: 0,
-  playerLoadTimer: 0
+  playerLoadTimer: 0,
+  playerSession: 0,
+  activePlayerData: null,
+  playerProgress: { watched: 0, duration: 0 },
+  lastProgressSavedAt: 0
 };
 
 const el = (selector, parent = document) => parent.querySelector(selector);
@@ -103,6 +110,12 @@ function mediaKey(item, fallbackType) {
 
 function titleOf(item) {
   return item?.title || item?.name || item?.original_title || item?.original_name || 'Untitled';
+}
+
+function isAnime(item) {
+  const genreIds = Array.isArray(item?.genre_ids) ? item.genre_ids.map(Number) : [];
+  const detailGenres = Array.isArray(item?.genres) ? item.genres.map(genre => Number(genre?.id)) : [];
+  return item?.original_language === 'ja' && (genreIds.includes(16) || detailGenres.includes(16));
 }
 
 function yearOf(item) {
@@ -230,6 +243,7 @@ function inWatchlist(item) {
 }
 
 function savedMediaItem(item, includeProgress = false) {
+  const existing = state.history.find(saved => mediaKey(saved) === mediaKey(item));
   const saved = {
     id: Number(validId(item.id)),
     media_type: mediaTypeOf(item),
@@ -248,6 +262,14 @@ function savedMediaItem(item, includeProgress = false) {
   }
   if (includeProgress) {
     saved.source = currentSource(saved.media_type)?.id || '';
+    const progressMatches = saved.media_type !== 'tv'
+      || (toInteger(existing?.season, -1) === state.currentSeason && toInteger(existing?.episode, -1) === state.currentEpisode);
+    const watched = Number(state.playerProgress.watched);
+    const duration = Number(state.playerProgress.duration);
+    if (Number.isFinite(watched) && watched > 0) saved.watched = Math.round(watched * 10) / 10;
+    else if (progressMatches && Number(existing?.watched) > 0) saved.watched = Number(existing.watched);
+    if (Number.isFinite(duration) && duration > 0) saved.duration = Math.round(duration * 10) / 10;
+    else if (progressMatches && Number(existing?.duration) > 0) saved.duration = Number(existing.duration);
   }
   return saved;
 }
@@ -274,6 +296,32 @@ function pushHistory(item) {
   state.history.unshift(savedMediaItem(item, true));
   state.history = state.history.slice(0, 30);
   saveCollections();
+}
+
+function restorePlayerProgress(item) {
+  const saved = state.history.find(entry => mediaKey(entry) === mediaKey(item));
+  const sameEpisode = mediaTypeOf(item) !== 'tv'
+    || (toInteger(saved?.season, -1) === state.currentSeason && toInteger(saved?.episode, -1) === state.currentEpisode);
+  state.playerProgress = sameEpisode
+    ? {
+        watched: Math.max(0, Number(saved?.watched) || 0),
+        duration: Math.max(0, Number(saved?.duration) || 0)
+      }
+    : { watched: 0, duration: 0 };
+  state.lastProgressSavedAt = 0;
+}
+
+function updatePlayerProgress(item, watched, duration, forceSave = false) {
+  const nextWatched = Number(watched);
+  const nextDuration = Number(duration);
+  if (Number.isFinite(nextWatched) && nextWatched >= 0) state.playerProgress.watched = nextWatched;
+  if (Number.isFinite(nextDuration) && nextDuration > 0) state.playerProgress.duration = nextDuration;
+
+  const now = Date.now();
+  if (forceSave || now - state.lastProgressSavedAt >= 5000) {
+    state.lastProgressSavedAt = now;
+    pushHistory(item);
+  }
 }
 
 const API = {
@@ -349,6 +397,11 @@ const API = {
   },
 
   trending: () => API.get('/trending/all/week', { page: 1 }),
+  anime: (page = 1) => API.discover('tv', page, {
+    with_genres: '16',
+    with_original_language: 'ja',
+    'vote_count.gte': 25
+  }),
   discover: (type, page = 1, filters = {}) => API.get(`/discover/${type}`, {
     sort_by: 'popularity.desc',
     include_adult: 'false',
@@ -392,6 +445,7 @@ function mediaCard(item, fallbackType, variant = 'poster') {
   const progress = type === 'tv' && toInteger(item?.episode, 0) > 0
     ? `${seasonLabel(toInteger(item.season, 1))} · Episode ${toInteger(item.episode, 1)}`
     : '';
+  const anime = isAnime(item);
 
   return `
     <a class="card${isLandscape ? ' card-landscape' : ''}" href="${watchHref(item, type)}" aria-label="Open ${titleSafe}">
@@ -402,14 +456,14 @@ function mediaCard(item, fallbackType, variant = 'poster') {
         ${Number.isFinite(rating) && rating > 0
           ? `<span class="rating" aria-label="Rated ${rating.toFixed(1)} out of 10">★ ${rating.toFixed(1)}</span>`
           : ''}
-        <span class="media-badge">${type === 'tv' ? 'Series' : 'Movie'}</span>
+        <span class="media-badge">${anime ? 'Anime' : type === 'tv' ? 'Series' : 'Movie'}</span>
         ${progress ? `<span class="progress-badge">${escapeHtml(progress)}</span>` : ''}
       </div>
       <div class="card-copy">
         <h3 class="card-title">${titleSafe}</h3>
         <div class="card-meta">
           <span>${year || 'Date TBA'}</span>
-          <span>${type === 'tv' ? 'TV' : 'Film'}</span>
+          <span>${anime ? 'Anime' : type === 'tv' ? 'TV' : 'Film'}</span>
         </div>
       </div>
     </a>`;
@@ -613,7 +667,7 @@ function serverSelector(type) {
       <label for="serverSelect">Playback source</label>
       <select class="select" id="serverSelect">
         ${sources.map((source, index) => `
-          <option value="${escapeHtml(source.id)}" ${index === state.currentServer ? 'selected' : ''}>${escapeHtml(source.name)}</option>
+          <option value="${escapeHtml(source.id)}" ${index === state.currentServer ? 'selected' : ''}>${escapeHtml(source.name)}${source.badge ? ` · ${escapeHtml(source.badge)}` : ''}</option>
         `).join('')}
       </select>
     </div>`;
@@ -655,23 +709,70 @@ function episodeSelector(seasons, episodes) {
     </div>`;
 }
 
+function providerQuery(data, source) {
+  const type = mediaTypeOf(data);
+  const params = new URLSearchParams();
+
+  if (source.provider === 'vidlink') {
+    params.set('primaryColor', 'c94d68');
+    params.set('secondaryColor', '164e45');
+    params.set('iconColor', 'fffaf0');
+    params.set('icons', 'default');
+    params.set('player', 'default');
+    params.set('title', 'true');
+    params.set('poster', 'true');
+    params.set('autoplay', 'false');
+    // Streambox owns episode navigation so the iframe cannot silently move
+    // to an episode that disagrees with the URL and Continue Watching state.
+    params.set('nextbutton', 'false');
+    if (state.playerProgress.watched >= 5) {
+      params.set('startAt', String(Math.floor(state.playerProgress.watched)));
+    }
+    params.set('fallback_url', new URL('/player-fallback.html', window.location.origin).toString());
+  }
+
+  if (source.provider === 'vidlove') {
+    params.set('primarycolor', 'c94d68');
+    params.set('secondarycolor', 'd6a94f');
+    params.set('iconcolor', 'fffaf0');
+    params.set('autoplay', 'false');
+    params.set('poster', 'true');
+    params.set('chromecast', 'true');
+    params.set('pip', 'true');
+    params.set('setting', 'true');
+    params.set('servericon', 'false');
+    if (type === 'tv') {
+      params.set('autonext', 'false');
+      params.set('nextbutton', 'false');
+      params.set('episodes', 'false');
+    }
+  }
+
+  return params;
+}
+
 function embedUrl(data) {
   const type = mediaTypeOf(data);
   const source = currentSource(type);
   const id = validId(data.id);
   let url = `${source.base}${id}`;
   if (type === 'tv') url += `/${state.currentSeason}/${state.currentEpisode}`;
-  return url;
+  const params = providerQuery(data, source);
+  const query = params.toString();
+  return `${url}${query ? `?${query}` : ''}`;
 }
 
 function videoEmbed(data) {
   const title = escapeHtml(titleOf(data));
   const source = currentSource(mediaTypeOf(data));
+  const session = state.playerSession;
   return `
     <div class="player-container">
       <iframe
         id="videoPlayer"
         data-src="${escapeHtml(embedUrl(data))}"
+        data-session="${session}"
+        data-source="${escapeHtml(source.id)}"
         title="${title} video player"
         allow="autoplay *; encrypted-media *; picture-in-picture *; fullscreen *"
         allowfullscreen="true"
@@ -682,6 +783,9 @@ function videoEmbed(data) {
         loading="eager"
         referrerpolicy="origin-when-cross-origin"
       ></iframe>
+      <button class="skip-intro" id="skipIntroBtn" type="button" hidden title="Jump ahead 85 seconds when the active player supports external seeking">
+        ${icon('skip')} <span>Skip intro</span><small>+85s</small>
+      </button>
       <div class="player-loading" id="playerLoading" role="status">
         <div class="loader-copy" id="playerStatusCopy"><span class="spinner" aria-hidden="true"></span><span>Loading ${escapeHtml(source.name)}…</span></div>
         <button class="btn btn-accent player-next-btn" id="playerNextSourceBtn" type="button" hidden>${icon('retry')} Try next source</button>
@@ -714,6 +818,7 @@ function whereToWatchHref(data) {
 
 function detailsBlock(data) {
   const type = mediaTypeOf(data);
+  const anime = isAnime(data);
   const providerData = regionalProviderData(data);
   const providers = Array.isArray(providerData.flatrate) ? providerData.flatrate : [];
   const providerLink = whereToWatchHref(data);
@@ -725,7 +830,7 @@ function detailsBlock(data) {
   const rating = Number(data.vote_average);
 
   return `
-    <p class="detail-kicker">${type === 'tv' ? 'TV series' : 'Movie'}</p>
+    <p class="detail-kicker">${anime ? 'Anime series' : type === 'tv' ? 'TV series' : 'Movie'}</p>
     <h1 class="detail-title">${escapeHtml(titleOf(data))}</h1>
     <div class="meta-row">
       ${year ? `<span class="meta-pill">${year}</span>` : ''}
@@ -1006,16 +1111,18 @@ async function renderHome(token) {
   app.innerHTML = loadingView(true);
 
   try {
-    const [trending, movies, shows] = await Promise.all([
+    const [trending, movies, shows, anime] = await Promise.all([
       API.trending(),
       API.discover('movie', 1),
-      API.discover('tv', 1)
+      API.discover('tv', 1),
+      API.anime(1)
     ]);
     if (!isCurrentRender(token)) return;
 
     const trendingItems = Array.isArray(trending.results) ? trending.results.filter(item => item.media_type !== 'person') : [];
     const movieItems = Array.isArray(movies.results) ? movies.results : [];
     const showItems = Array.isArray(shows.results) ? shows.results : [];
+    const animeItems = Array.isArray(anime.results) ? anime.results : [];
     const featured = trendingItems.find(item => item.backdrop_path)
       || movieItems.find(item => item.backdrop_path)
       || showItems.find(item => item.backdrop_path)
@@ -1047,6 +1154,13 @@ async function renderHome(token) {
             href: '#/tv',
             linkText: 'All series'
           })
+        : '',
+      animeItems.length
+        ? sectionBlock('Anime worlds', mediaRail(animeItems.slice(0, 18), 'tv'), {
+            note: 'Popular Japanese animation from the TMDB catalog.',
+            href: '#/anime',
+            linkText: 'Explore anime'
+          })
         : ''
     ].filter(Boolean);
 
@@ -1058,6 +1172,39 @@ async function renderHome(token) {
   } catch (error) {
     if (!isCurrentRender(token)) return;
     console.error('Home view failed.', error);
+    app.innerHTML = errorView(error);
+  }
+}
+
+async function renderAnime(params, token) {
+  const app = el('#app');
+  if (!app) return;
+  const currentPage = clamp(toInteger(params.page, 1), 1, 500);
+  setDocumentTitle('Anime');
+  app.innerHTML = loadingView(false);
+
+  try {
+    const data = await API.anime(currentPage);
+    if (!isCurrentRender(token)) return;
+    const items = Array.isArray(data.results) ? data.results : [];
+    const totalPages = clamp(toInteger(data.total_pages, 1), 1, 500);
+    const totalResults = Math.max(toInteger(data.total_results, items.length), items.length);
+    app.innerHTML = `
+      <header class="page-head anime-page-head">
+        <div>
+          <p class="eyebrow">Animated worlds</p>
+          <h1 class="page-title">Anime</h1>
+          <p class="page-subtitle">Popular Japanese animated series, organized from the TMDB catalog.</p>
+        </div>
+        <span class="result-count">${totalResults.toLocaleString()} titles</span>
+      </header>
+      ${items.length
+        ? mediaGrid(items, 'tv')
+        : emptyView('No anime found', 'The anime catalog returned no titles. Try again in a moment.')}
+      ${items.length ? paginationMarkup('/anime', params, currentPage, totalPages, 'Anime') : ''}`;
+  } catch (error) {
+    if (!isCurrentRender(token)) return;
+    console.error('Anime view failed.', error);
     app.innerHTML = errorView(error);
   }
 }
@@ -1256,7 +1403,9 @@ async function renderWatch(params, token) {
       episodes = availableEpisodes(seasonData);
       configureEpisodeSelection(episodes, params.episode);
     }
+    restorePlayerProgress(data);
     pushHistory(data);
+    state.activePlayerData = data;
     setDocumentTitle(titleOf(data));
     const whereToWatch = whereToWatchHref(data);
 
@@ -1279,7 +1428,7 @@ async function renderWatch(params, token) {
             </a>`
           : ''}
       </div>
-      <p class="source-help">Using <strong>${escapeHtml(currentSource(type).name)}</strong>. If playback is blocked or unavailable, try the next source.</p>`;
+      <p class="source-help">Using <strong>${escapeHtml(currentSource(type).name)}</strong>. Streambox keeps episode changes in sync; use Try next source if this player is unavailable.</p>`;
 
     const cast = Array.isArray(data.credits?.cast) ? data.credits.cast.slice(0, 14) : [];
     const similar = Array.isArray(data.similar?.results) ? data.similar.results.slice(0, 18) : [];
@@ -1363,41 +1512,159 @@ function syncWatchUrl(data) {
   }
 }
 
-function attachPlayerLoadHandlers(data) {
+function disposePlayerFrame() {
+  window.clearTimeout(state.playerLoadTimer);
   const iframe = el('#videoPlayer');
+  if (iframe) {
+    iframe.removeAttribute('src');
+    iframe.remove();
+  }
+  state.playerSession += 1;
+  state.activePlayerData = null;
+}
+
+function isActivePlayer(iframe, source, session) {
+  return Boolean(
+    iframe?.isConnected
+    && Number(iframe.dataset.session) === session
+    && iframe.dataset.source === source.id
+    && iframe === el('#videoPlayer')
+  );
+}
+
+function markPlayerReady(data, source, iframe, session) {
+  if (!isActivePlayer(iframe, source, session)) return;
+  const loading = el('#playerLoading');
+  if (loading) {
+    loading.classList.add('hidden');
+    loading.setAttribute('aria-hidden', 'true');
+  }
+  window.clearTimeout(state.playerLoadTimer);
+  saveSourcePreference(mediaTypeOf(data), source.id);
+  pushHistory(data);
+}
+
+function markPlayerFailed(data, source, iframe, session, message) {
+  if (!isActivePlayer(iframe, source, session)) return;
   const loading = el('#playerLoading');
   const statusCopy = el('#playerStatusCopy');
   const nextButton = el('#playerNextSourceBtn');
+  if (!loading) return;
+  loading.classList.remove('hidden');
+  loading.classList.add('failed');
+  loading.setAttribute('aria-hidden', 'false');
+  if (statusCopy) statusCopy.textContent = message || `${source.name} could not start this title.`;
+  if (nextButton) nextButton.hidden = false;
+}
+
+function normalizePlayerMessage(value, data) {
+  let message = value;
+  if (typeof message === 'string') {
+    try { message = JSON.parse(message); } catch { return null; }
+  }
+  if (!message || typeof message !== 'object') return null;
+
+  if (message.type === 'MEDIA_DATA') {
+    const media = message.data?.[validId(data.id)] || message.data;
+    const episodeKey = `s${state.currentSeason}e${state.currentEpisode}`;
+    const progress = media?.show_progress?.[episodeKey]?.progress || media?.progress;
+    return progress ? {
+      event: 'timeupdate',
+      currentTime: progress.watched,
+      duration: progress.duration
+    } : null;
+  }
+
+  const payload = message.type === 'PLAYER_EVENT' && message.data && typeof message.data === 'object'
+    ? message.data
+    : message.data && typeof message.data === 'object' && !message.event
+      ? { ...message.data, event: message.data.event || message.type }
+      : message;
+  const eventName = String(payload.event || payload.type || '').toLowerCase();
+  if (!['play', 'pause', 'seeked', 'ended', 'timeupdate'].includes(eventName)) return null;
+  return {
+    event: eventName,
+    currentTime: payload.currentTime ?? payload.current_time ?? payload.time ?? payload.progress?.watched,
+    duration: payload.duration ?? payload.progress?.duration
+  };
+}
+
+function updateSkipIntroButton(data, source) {
+  const button = el('#skipIntroBtn');
+  if (!button) return;
+  const watched = Number(state.playerProgress.watched) || 0;
+  button.hidden = !(mediaTypeOf(data) === 'tv' && source.externalSeek && watched < 240);
+}
+
+function sendPlayerTime(iframe, source, seconds) {
+  if (!iframe?.contentWindow || !source.externalSeek) return false;
+  iframe.contentWindow.postMessage({ type: 'SET_TIME', time: seconds, currentTime: seconds }, source.origin);
+  return true;
+}
+
+function handlePlayerMessage(event) {
+  const iframe = el('#videoPlayer');
+  const data = state.activePlayerData;
+  if (!iframe || !data || event.source !== iframe.contentWindow) return;
+
+  const source = currentSource(mediaTypeOf(data));
+  const session = Number(iframe.dataset.session);
+  if (!isActivePlayer(iframe, source, session)) return;
+
+  if (event.origin === window.location.origin && event.data?.type === 'STREAMBOX_PLAYER_ERROR') {
+    markPlayerFailed(data, source, iframe, session, `${source.name} reported that this title is unavailable.`);
+    return;
+  }
+  if (event.origin !== source.origin) return;
+
+  const playerEvent = normalizePlayerMessage(event.data, data);
+  if (!playerEvent) return;
+  markPlayerReady(data, source, iframe, session);
+
+  const forceSave = playerEvent.event === 'pause' || playerEvent.event === 'seeked' || playerEvent.event === 'ended';
+  updatePlayerProgress(data, playerEvent.currentTime, playerEvent.duration, forceSave);
+  updateSkipIntroButton(data, source);
+
+  if (source.externalSeek && iframe.dataset.resumeSent !== 'true' && state.playerProgress.watched >= 5) {
+    iframe.dataset.resumeSent = 'true';
+    sendPlayerTime(iframe, source, Math.floor(state.playerProgress.watched));
+  }
+  if (playerEvent.event === 'ended') toast(mediaTypeOf(data) === 'tv' ? 'Episode finished. Choose the next episode when ready.' : 'Playback finished.');
+}
+
+function attachPlayerLoadHandlers(data) {
+  const iframe = el('#videoPlayer');
+  const loading = el('#playerLoading');
+  const nextButton = el('#playerNextSourceBtn');
   if (!iframe || !loading) return;
 
+  const source = currentSource(mediaTypeOf(data));
+  const session = Number(iframe.dataset.session);
+
   window.clearTimeout(state.playerLoadTimer);
-  const hideLoading = () => {
+
+  iframe.addEventListener('load', () => {
+    if (!isActivePlayer(iframe, source, session)) return;
     loading.classList.add('hidden');
     loading.setAttribute('aria-hidden', 'true');
-    window.clearTimeout(state.playerLoadTimer);
-  };
-  const markReady = () => {
-    if (!iframe.isConnected || !loading.isConnected) return;
-    hideLoading();
-    const type = mediaTypeOf(data);
-    saveSourcePreference(type, currentSource(type).id);
-    pushHistory(data);
-  };
-  const markFailed = () => {
-    if (!loading.isConnected || loading.classList.contains('hidden')) return;
-    loading.classList.add('failed');
-    if (statusCopy) statusCopy.textContent = `${currentSource(mediaTypeOf(data)).name} is taking too long or may be unavailable.`;
-    if (nextButton) nextButton.hidden = false;
-  };
-
-  iframe.addEventListener('load', markReady, { once: true });
-  iframe.addEventListener('error', markFailed, { once: true });
+    if (!source.events) markPlayerReady(data, source, iframe, session);
+    if (source.externalSeek && state.playerProgress.watched >= 5) {
+      window.setTimeout(() => {
+        if (!isActivePlayer(iframe, source, session) || iframe.dataset.resumeSent === 'true') return;
+        iframe.dataset.resumeSent = 'true';
+        sendPlayerTime(iframe, source, Math.floor(state.playerProgress.watched));
+      }, 900);
+    }
+    updateSkipIntroButton(data, source);
+  }, { once: true });
+  iframe.addEventListener('error', () => {
+    markPlayerFailed(data, source, iframe, session, `${source.name} could not load. Try another source.`);
+  }, { once: true });
   if (nextButton) nextButton.addEventListener('click', () => tryNextSource(data));
   state.playerLoadTimer = window.setTimeout(() => {
-    if (!iframe.isConnected || !loading.isConnected || loading.classList.contains('hidden')) return;
-    hideLoading();
-    toast(`${currentSource(mediaTypeOf(data)).name} is still loading. Try the next source if playback does not start.`);
-  }, 9000);
+    if (!isActivePlayer(iframe, source, session) || loading.classList.contains('hidden')) return;
+    markPlayerFailed(data, source, iframe, session, `${source.name} is taking too long. The player remains available behind this message.`);
+  }, 12000);
 
   const sourceUrl = iframe.dataset.src;
   if (sourceUrl) iframe.src = sourceUrl;
@@ -1406,6 +1673,8 @@ function attachPlayerLoadHandlers(data) {
 function renderPlayerFrame(data) {
   const player = el('#player');
   if (!player) return;
+  disposePlayerFrame();
+  state.activePlayerData = data;
   player.innerHTML = videoEmbed(data);
   attachPlayerLoadHandlers(data);
 }
@@ -1421,7 +1690,7 @@ function chooseSource(data, index, announce = true) {
   const select = el('#serverSelect');
   if (select) select.value = currentSource(type).id;
   const help = el('.source-help');
-  if (help) help.innerHTML = `Using <strong>${escapeHtml(currentSource(type).name)}</strong>. If playback is blocked or unavailable, try the next source.`;
+  if (help) help.innerHTML = `Using <strong>${escapeHtml(currentSource(type).name)}</strong>. Streambox keeps episode changes in sync; use Try next source if this player is unavailable.`;
   if (announce) toast(`Trying ${currentSource(type).name}.`);
 }
 
@@ -1448,6 +1717,25 @@ function bindPlayerControls(data, seasons, episodes) {
   const nextSourceButton = el('#nextSourceBtn');
   if (nextSourceButton) nextSourceButton.addEventListener('click', () => tryNextSource(data));
 
+  const skipIntroButton = el('#skipIntroBtn');
+  if (skipIntroButton) {
+    skipIntroButton.addEventListener('click', () => {
+      const iframe = el('#videoPlayer');
+      const source = currentSource(mediaTypeOf(data));
+      const watched = Number(state.playerProgress.watched) || 0;
+      const duration = Number(state.playerProgress.duration) || 0;
+      let target = Math.max(90, watched + 85);
+      if (duration > 10) target = Math.min(target, duration - 5);
+      if (sendPlayerTime(iframe, source, Math.floor(target))) {
+        updatePlayerProgress(data, target, duration, true);
+        updateSkipIntroButton(data, source);
+        toast('Skipped ahead 85 seconds.');
+      } else {
+        toast('This player does not expose external seeking.');
+      }
+    });
+  }
+
   const changeSeason = seasonNumber => {
     const exists = seasons.some(season => toInteger(season.season_number) === seasonNumber);
     if (!exists) return;
@@ -1473,6 +1761,7 @@ function bindPlayerControls(data, seasons, episodes) {
     const selected = episodes.find(episode => toInteger(episode.episode_number) === episodeNumber);
     if (!selected) return;
     state.currentEpisode = toInteger(selected.episode_number, 1);
+    state.playerProgress = { watched: 0, duration: 0 };
     refreshEpisodeControls(episodes);
     renderPlayerFrame(data);
     syncWatchUrl(data);
@@ -1719,7 +2008,7 @@ async function tick() {
   if (!app) return;
 
   const { path, params } = parseHash();
-  window.clearTimeout(state.playerLoadTimer);
+  disposePlayerFrame();
   setMenuOpen(false);
   hideSuggestions();
   updateActiveTabs(path, params);
@@ -1737,6 +2026,9 @@ async function tick() {
         break;
       case '/tv':
         await renderDiscover('tv', params, token);
+        break;
+      case '/anime':
+        await renderAnime(params, token);
         break;
       case '/watchlist':
         renderWatchlist(params);
@@ -1764,6 +2056,7 @@ async function tick() {
 
 function setupGlobalEvents() {
   window.addEventListener('hashchange', tick);
+  window.addEventListener('message', handlePlayerMessage);
 
   document.addEventListener('click', event => {
     if (event.target.closest('[data-retry]')) tick();

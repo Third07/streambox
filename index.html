@@ -1,13 +1,13 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="rtnw">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#050507">
-  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#fffaf0">
+  <meta name="color-scheme" content="light">
 
-  <title>Streambox — Discover Movies &amp; TV Series</title>
-  <meta name="description" content="Explore and filter trending movies and TV series on Streambox, save a watchlist, and continue from your latest season and episode.">
+  <title>Streambox — Movies, TV Series &amp; Anime</title>
+  <meta name="description" content="Explore movies, TV series, and anime on Streambox, save a watchlist, and continue from your latest season and episode.">
   <meta name="author" content="Streambox">
   <meta name="application-name" content="Streambox">
   <meta name="apple-mobile-web-app-title" content="Streambox">
@@ -20,22 +20,20 @@
   <meta property="og:url" content="https://streambox.rtnw.online/">
   <meta property="og:locale" content="en_PH">
   <meta property="og:site_name" content="Streambox">
-  <meta property="og:title" content="Streambox — Discover Movies &amp; TV Series">
-  <meta property="og:description" content="Explore trending movies and TV series, search the TMDB catalog, and build your personal watchlist.">
+  <meta property="og:title" content="Streambox — Movies, TV Series &amp; Anime">
+  <meta property="og:description" content="Explore trending movies, TV series, and anime, then build your personal watchlist.">
   <meta property="og:image" content="https://streambox.rtnw.online/og-image.jpeg">
   <meta property="og:image:alt" content="Streambox movie and TV catalog">
   <meta property="og:image:type" content="image/jpeg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Streambox — Discover Movies &amp; TV Series">
-  <meta name="twitter:description" content="Explore trending movies and TV series, search the TMDB catalog, and build your personal watchlist.">
+  <meta name="twitter:title" content="Streambox — Movies, TV Series &amp; Anime">
+  <meta name="twitter:description" content="Explore trending movies, TV series, and anime, then build your personal watchlist.">
   <meta name="twitter:image" content="https://streambox.rtnw.online/og-image.jpeg">
   <meta name="twitter:image:alt" content="Streambox movie and TV catalog">
 
-  <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
   <link rel="preconnect" href="https://image.tmdb.org" crossorigin>
   <link rel="dns-prefetch" href="https://image.tmdb.org">
@@ -49,14 +47,14 @@
         "@id": "https://streambox.rtnw.online/#website",
         "url": "https://streambox.rtnw.online/",
         "name": "Streambox",
-        "description": "Discover movies and TV series, search the TMDB catalog, and save a personal watchlist.",
+        "description": "Discover movies, TV series, and anime, search the TMDB catalog, and save a personal watchlist.",
         "inLanguage": "en"
       },
       {
         "@type": "WebApplication",
         "@id": "https://streambox.rtnw.online/#app",
         "name": "Streambox",
-        "description": "A responsive movie and TV discovery catalog powered by TMDB.",
+        "description": "A responsive movie, TV, and anime discovery catalog powered by TMDB.",
         "url": "https://streambox.rtnw.online/",
         "image": "https://streambox.rtnw.online/og-image.jpeg",
         "applicationCategory": "EntertainmentApplication",
@@ -89,19 +87,18 @@
     <nav class="nav" aria-label="Primary navigation">
       <a class="brand" href="#/home" aria-label="Streambox home">
         <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true">
-          <rect width="64" height="64" rx="16"></rect>
-          <path d="M48 18c-4-3-9-5-14-5-9 0-15 5-15 12 0 8 7 10 14 12 5 1 8 2 8 5 0 2-2 4-6 4-5 0-10-2-15-6l-5 8c5 5 12 8 20 8 10 0 17-5 17-14 0-8-6-11-15-13-5-1-8-2-8-5 0-2 2-4 6-4 4 0 8 1 12 5z"></path>
-          <circle cx="14" cy="18" r="3"></circle>
-          <circle cx="14" cy="32" r="3"></circle>
-          <circle cx="14" cy="46" r="3"></circle>
+          <circle cx="31" cy="33" r="25"></circle>
+          <path class="brand-play" d="m25 21 20 12-20 12Z"></path>
+          <path class="brand-star" d="m50 7 2.5 6.5L59 16l-6.5 2.5L50 25l-2.5-6.5L41 16l6.5-2.5z"></path>
         </svg>
-        <span class="brand-name">Streambox</span>
+        <span class="brand-copy"><strong>Streambox</strong><small>by RTNW Hub</small></span>
       </a>
 
       <div class="tabs desktop-tabs" aria-label="Browse">
         <a href="#/home" data-tab>Home</a>
         <a href="#/movies" data-tab>Movies</a>
         <a href="#/tv" data-tab>TV series</a>
+        <a href="#/anime" data-tab>Anime</a>
         <a href="#/watchlist" data-tab>Watchlist</a>
       </div>
 
@@ -111,7 +108,7 @@
             <circle cx="11" cy="11" r="7"></circle>
             <path d="m20 20-4-4"></path>
           </svg>
-          <label class="visually-hidden" for="q">Search movies and TV series</label>
+          <label class="visually-hidden" for="q">Search movies, TV series, and anime</label>
           <input id="q" type="search" role="combobox" placeholder="Search titles…" autocomplete="off" aria-autocomplete="list" aria-haspopup="listbox" aria-controls="suggest" aria-expanded="false">
           <button class="search-clear" id="searchClear" type="button" aria-label="Clear search" hidden>×</button>
           <kbd class="kbd" aria-hidden="true">/</kbd>
@@ -142,6 +139,10 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m8 2 4 3 4-3"></path></svg>
           TV series
         </a>
+        <a href="#/anime" data-tab class="mobile-menu-item">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c4.7 0 8 3.5 8 8.2 0 5-3.7 8.8-8 9.8-4.3-1-8-4.8-8-9.8C4 6.5 7.3 3 12 3Z"></path><path d="m8 11 2 2 6-5"></path></svg>
+          Anime
+        </a>
         <a href="#/watchlist" data-tab class="mobile-menu-item">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18l-6-4-6 4Z"></path></svg>
           Watchlist
@@ -152,15 +153,15 @@
 
   <main id="app" tabindex="-1" aria-live="polite" aria-busy="true">
     <section class="seo-fallback">
-      <h1>Discover movies and TV series with Streambox</h1>
-      <p>Explore trending titles from the TMDB catalog, search for movies and shows, save a personal watchlist, and continue watching across visits.</p>
+      <h1>Discover movies, TV series, and anime with Streambox</h1>
+      <p>Explore trending titles from the TMDB catalog, save a personal watchlist, and continue watching across visits.</p>
     </section>
   </main>
 
   <footer class="site-footer">
     <div>
-      <strong>Streambox</strong>
-      <span>Movie and TV discovery with catalog data from TMDB.</span>
+      <strong>Streambox · RTNW Hub</strong>
+      <span>Movie, TV, and anime discovery with catalog data from TMDB.</span>
     </div>
     <small>Streambox does not host media files. Playback is provided by independent third parties. This product uses the TMDB API but is not endorsed or certified by TMDB. Streaming availability data is supplied by JustWatch through TMDB.</small>
   </footer>
