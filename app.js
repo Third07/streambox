@@ -45,8 +45,7 @@ const ICONS = {
   search: '<circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path>',
   close: '<path d="m6 6 12 12M18 6 6 18"></path>',
   trash: '<path d="M4 7h16M9 7V4h6v3m3 0-1 14H7L6 7m4 4v6m4-6v6"></path>',
-  retry: '<path d="M20 7v5h-5M4 17v-5h5"></path><path d="M6.1 9a7 7 0 0 1 11.7-2L20 9M4 15l2.2 2a7 7 0 0 0 11.7-2"></path>',
-  skip: '<path d="m5 6 8 6-8 6Z"></path><path d="m13 6 8 6-8 6Z"></path>'
+  retry: '<path d="M20 7v5h-5M4 17v-5h5"></path><path d="M6.1 9a7 7 0 0 1 11.7-2L20 9M4 15l2.2 2a7 7 0 0 0 11.7-2"></path>'
 };
 
 const state = {
@@ -783,9 +782,6 @@ function videoEmbed(data) {
         loading="eager"
         referrerpolicy="origin-when-cross-origin"
       ></iframe>
-      <button class="skip-intro" id="skipIntroBtn" type="button" hidden title="Jump ahead 85 seconds when the active player supports external seeking">
-        ${icon('skip')} <span>Skip intro</span><small>+85s</small>
-      </button>
       <div class="player-loading" id="playerLoading" role="status">
         <div class="loader-copy" id="playerStatusCopy"><span class="spinner" aria-hidden="true"></span><span>Loading ${escapeHtml(source.name)}…</span></div>
         <button class="btn btn-accent player-next-btn" id="playerNextSourceBtn" type="button" hidden>${icon('retry')} Try next source</button>
@@ -1589,13 +1585,6 @@ function normalizePlayerMessage(value, data) {
   };
 }
 
-function updateSkipIntroButton(data, source) {
-  const button = el('#skipIntroBtn');
-  if (!button) return;
-  const watched = Number(state.playerProgress.watched) || 0;
-  button.hidden = !(mediaTypeOf(data) === 'tv' && source.externalSeek && watched < 240);
-}
-
 function sendPlayerTime(iframe, source, seconds) {
   if (!iframe?.contentWindow || !source.externalSeek) return false;
   iframe.contentWindow.postMessage({ type: 'SET_TIME', time: seconds, currentTime: seconds }, source.origin);
@@ -1623,8 +1612,6 @@ function handlePlayerMessage(event) {
 
   const forceSave = playerEvent.event === 'pause' || playerEvent.event === 'seeked' || playerEvent.event === 'ended';
   updatePlayerProgress(data, playerEvent.currentTime, playerEvent.duration, forceSave);
-  updateSkipIntroButton(data, source);
-
   if (source.externalSeek && iframe.dataset.resumeSent !== 'true' && state.playerProgress.watched >= 5) {
     iframe.dataset.resumeSent = 'true';
     sendPlayerTime(iframe, source, Math.floor(state.playerProgress.watched));
@@ -1655,7 +1642,6 @@ function attachPlayerLoadHandlers(data) {
         sendPlayerTime(iframe, source, Math.floor(state.playerProgress.watched));
       }, 900);
     }
-    updateSkipIntroButton(data, source);
   }, { once: true });
   iframe.addEventListener('error', () => {
     markPlayerFailed(data, source, iframe, session, `${source.name} could not load. Try another source.`);
@@ -1716,25 +1702,6 @@ function bindPlayerControls(data, seasons, episodes) {
 
   const nextSourceButton = el('#nextSourceBtn');
   if (nextSourceButton) nextSourceButton.addEventListener('click', () => tryNextSource(data));
-
-  const skipIntroButton = el('#skipIntroBtn');
-  if (skipIntroButton) {
-    skipIntroButton.addEventListener('click', () => {
-      const iframe = el('#videoPlayer');
-      const source = currentSource(mediaTypeOf(data));
-      const watched = Number(state.playerProgress.watched) || 0;
-      const duration = Number(state.playerProgress.duration) || 0;
-      let target = Math.max(90, watched + 85);
-      if (duration > 10) target = Math.min(target, duration - 5);
-      if (sendPlayerTime(iframe, source, Math.floor(target))) {
-        updatePlayerProgress(data, target, duration, true);
-        updateSkipIntroButton(data, source);
-        toast('Skipped ahead 85 seconds.');
-      } else {
-        toast('This player does not expose external seeking.');
-      }
-    });
-  }
 
   const changeSeason = seasonNumber => {
     const exists = seasons.some(season => toInteger(season.season_number) === seasonNumber);

@@ -12,7 +12,6 @@ Streambox is a responsive, build-free movie, TV, and anime catalog powered by TM
 - A clear-history action for Continue Watching.
 - Named playback sources, a Try Next Source action, slow-source feedback, and remembered source preference.
 - VidLink and VidLove integrations with provider-specific options, origin-checked player events, progress resume, and conflict-free episode switching.
-- A best-effort Skip Intro action for VidLove TV playback while the episode is near its beginning.
 - A dedicated anime destination and home-page anime rail.
 - Aired episode metadata with names, thumbnails, dates, and future-episode filtering.
 - Responsive TMDB image `srcset` values and browser/edge API caching.
@@ -84,6 +83,6 @@ Streambox/
 
 Streambox keeps the currently configured external playback sources and displays their real names. VidLink and VidLove messages are accepted only from the current iframe and the provider's exact origin, preventing stale events when a viewer changes servers. Streambox disables provider-owned next-episode controls on these integrations so its season, episode, URL, and Continue Watching state remain aligned.
 
-VidLove documents external seeking, so Streambox can offer an 85-second best-effort Skip Intro action near the beginning of TV episodes. Neither provider publishes exact title-specific intro markers, so this is intentionally a timed shortcut rather than scene detection. VidLink playback resumes through its documented `startAt` option. Sources without event APIs retain load feedback and a manual Try Next Source control.
+VidLink playback resumes through its documented `startAt` option. Sources without event APIs retain load feedback and a manual Try Next Source control.
 
 Streambox does not host media files. The obsolete third-party downloader was removed. When TMDB supplies a Philippines watch-provider destination, the watch page links to that regional availability page instead.
