@@ -13,15 +13,13 @@ const CONFIG = {
 const PLAYER_SOURCES = {
   movie: [
     { id: 'vidlove', name: 'VidLove', origin: 'https://player.vidlove.cc', base: 'https://player.vidlove.cc/embed/movie/', events: true, externalSeek: true },
-    { id: 'vidlink', name: 'VidLink', origin: 'https://vidlink.pro', base: 'https://vidlink.pro/movie/', events: true },    
-    { id: 'vidrock', name: 'VidRock', origin: 'https://vidrock.net', base: 'https://vidrock.net/movie/' },
+    { id: 'vidlink', name: 'VidLink', origin: 'https://vidlink.pro', base: 'https://vidlink.pro/movie/', events: true },     { id: 'vidrock', name: 'VidRock', origin: 'https://vidrock.net', base: 'https://vidrock.net/movie/' },
     { id: 'vidsrc-io', name: 'VidSrc IO', origin: 'https://vidsrc.io', base: 'https://vidsrc.io/embed/movie/' },
     { id: '111movies', name: '111Movies', origin: 'https://111movies.net', base: 'https://111movies.net/movie/' }
   ],
   tv: [
-    { id: 'vidlink', name: 'VidLink', badge: 'Recommended', provider: 'vidlink', origin: 'https://vidlink.pro', base: 'https://vidlink.pro/tv/', events: true },
-    { id: 'vidlove', name: 'VidLove', badge: 'New', provider: 'vidlove', origin: 'https://player.vidlove.cc', base: 'https://player.vidlove.cc/embed/tv/', events: true, externalSeek: true },
-    { id: 'videasy', name: 'Videasy', origin: 'https://player.videasy.net', base: 'https://player.videasy.net/tv/' },
+    { id: 'vidlove', name: 'VidLove', origin: 'https://player.vidlove.cc', base: 'https://player.vidlove.cc/embed/tv/', events: true, externalSeek: true },
+    { id: 'vidlink', name: 'VidLink', origin: 'https://vidlink.pro', base: 'https://vidlink.pro/tv/', events: true },
     { id: 'vidrock', name: 'VidRock', origin: 'https://vidrock.net', base: 'https://vidrock.net/tv/' },
     { id: 'vidsrc-io', name: 'VidSrc IO', origin: 'https://vidsrc.io', base: 'https://vidsrc.io/embed/tv/' },
     { id: '111movies', name: '111Movies', origin: 'https://111movies.net', base: 'https://111movies.net/tv/' }
